@@ -1,0 +1,130 @@
+sources:
+  BI_SEKI:
+    name: Bank Indonesia SEKI
+    artifact: edition_zip
+    url: https://www.bi.go.id/id/statistik/ekonomi-keuangan/seki/
+    cadence:
+      probe_window:
+        start_day: 15
+        end_day: 28
+      release_lag_days: 10
+  BI_JISDOR:
+    name: Bank Indonesia JISDOR
+    artifact: daily_page
+    url: https://www.bi.go.id/id/statistik/informasi-kurs/jisdor/
+    cadence:
+      frequency: weekday
+      release_lag_days: 4
+
+indicators:
+  POLICY_RATE:
+    name: BI Policy Rate (stitched official series)
+    unit: percent_per_annum
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL1_25_1
+    source_sheet: 1.25A_1
+    source_row: Policy Rate
+    drift:
+      warn:
+        type: absolute_bp
+        value: 25
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+    regimes:
+      - label: BI Rate
+        source_code: BI_RATE
+        valid_from: 2010-01-01
+        valid_to: 2022-06-30
+      - label: BI 7-Day Reverse Repo Rate
+        source_code: BI7DR
+        valid_from: 2022-07-01
+        valid_to: null
+  BI7DR:
+    name: BI 7-Day Reverse Repo Rate
+    unit: percent_per_annum
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL1_25_1
+    source_sheet: 1.25A_1
+    source_row: Reverse Repo Surat Berharga Negara (7 Hari)
+    valid_from: 2022-07-01
+    drift:
+      warn:
+        type: absolute_bp
+        value: 25
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+  BI_RATE:
+    name: BI Rate (legacy)
+    unit: percent_per_annum
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL1_25_1
+    source_row: BI Rate
+    valid_to: 2022-06-30
+    drift:
+      warn:
+        type: absolute_bp
+        value: 25
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+  DF_RATE:
+    name: Deposit Facility Rate
+    unit: percent_per_annum
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL1_25_1
+    source_sheet: 1.25A_2
+    source_row: Deposit Facility
+    drift:
+      warn:
+        type: absolute_bp
+        value: 25
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+  LF_RATE:
+    name: Lending Facility Rate
+    unit: percent_per_annum
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL1_25_1
+    source_sheet: 1.25A_2
+    source_row: Lending Facility dan Financing
+    drift:
+      warn:
+        type: absolute_bp
+        value: 25
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+  USDIRR_JISDOR:
+    name: USD/IDR Reference Rate (JISDOR)
+    unit: idr_per_usd
+    frequency: daily
+    source: BI_JISDOR
+    drift:
+      warn:
+        type: relative
+        value: 0.05
+      circuit_breaker:
+        type: relative
+        value: 0.20
+  USDIRR_SEKI:
+    name: USD/IDR Monthly Middle Rate (SEKI V.40)
+    unit: idr_per_usd
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL5_40
+    role: reconciliation
+    drift:
+      warn:
+        type: relative
+        value: 0.05
+      circuit_breaker:
+        type: relative
+        value: 0.20
