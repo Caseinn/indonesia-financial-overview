@@ -1,3 +1,18 @@
+geography:
+  IDN:
+    name: Indonesia
+    is_national: true
+  PHL:
+    name: Philippines
+  MYS:
+    name: Malaysia
+  CHN:
+    name: China
+  THA:
+    name: Thailand
+  SGP:
+    name: Singapore
+
 sources:
   BI_SEKI:
     name: Bank Indonesia SEKI
@@ -15,6 +30,20 @@ sources:
     cadence:
       frequency: weekday
       release_lag_days: 4
+  BPS:
+    name: Badan Pusat Statistik
+    artifact: json_api
+    url: https://webapi.bps.go.id
+    cadence:
+      frequency: monthly
+      release_lag_days: 1
+  OJK_SPI:
+    name: OJK Indonesia Banking Statistics
+    artifact: xmla
+    url: https://data.ojk.go.id/SJKPublic
+    cadence:
+      frequency: monthly
+      release_lag_days: 10
 
 indicators:
   POLICY_RATE:
@@ -23,7 +52,9 @@ indicators:
     frequency: monthly
     source: BI_SEKI
     source_table: TABEL1_25_1
-    source_sheet: 1.25A_1
+    source_sheets:
+      - Th 2010-2016
+      - 1.25A_1
     source_row: Policy Rate
     drift:
       warn:
@@ -47,8 +78,10 @@ indicators:
     frequency: monthly
     source: BI_SEKI
     source_table: TABEL1_25_1
-    source_sheet: 1.25A_1
-    source_row: Reverse Repo Surat Berharga Negara (7 Hari)
+    source_sheets:
+      - 1.25A_1
+    source_parent: Reverse Repo Surat Berharga Negara
+    source_row: 7 Hari
     valid_from: 2022-07-01
     drift:
       warn:
@@ -63,23 +96,10 @@ indicators:
     frequency: monthly
     source: BI_SEKI
     source_table: TABEL1_25_1
+    source_sheets:
+      - Th 2002-2009
     source_row: BI Rate
-    valid_to: 2022-06-30
-    drift:
-      warn:
-        type: absolute_bp
-        value: 25
-      circuit_breaker:
-        type: absolute_bp
-        value: 500
-  DF_RATE:
-    name: Deposit Facility Rate
-    unit: percent_per_annum
-    frequency: monthly
-    source: BI_SEKI
-    source_table: TABEL1_25_1
-    source_sheet: 1.25A_2
-    source_row: Deposit Facility
+    valid_from: 2005-10-01
     drift:
       warn:
         type: absolute_bp
@@ -93,7 +113,8 @@ indicators:
     frequency: monthly
     source: BI_SEKI
     source_table: TABEL1_25_1
-    source_sheet: 1.25A_2
+    source_sheets:
+      - 1.25A_2
     source_row: Lending Facility dan Financing
     drift:
       warn:
@@ -102,6 +123,55 @@ indicators:
       circuit_breaker:
         type: absolute_bp
         value: 500
+  DF_RATE:
+    name: Deposit Facility Rate
+    unit: percent_per_annum
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL1_25_1
+    source_sheets:
+      - 1.25A_2
+    source_parent: Deposit Facility
+    source_row: 1 Hari Sore
+    drift:
+      warn:
+        type: absolute_bp
+        value: 25
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+  MONEY_SUPPLY_M2:
+    name: Broad Money (M2)
+    unit: miliar_idr
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL1_1
+    source_sheets:
+      - I.1
+    source_row: Uang Beredar Luas(M2)
+    drift:
+      warn:
+        type: relative
+        value: 0.10
+      circuit_breaker:
+        type: relative
+        value: 0.30
+  MONEY_SUPPLY_M1:
+    name: Narrow Money (M1)
+    unit: miliar_idr
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL1_1
+    source_sheets:
+      - I.1
+    source_row: Uang Beredar Sempit (M1)
+    drift:
+      warn:
+        type: relative
+        value: 0.10
+      circuit_breaker:
+        type: relative
+        value: 0.30
   USDIRR_JISDOR:
     name: USD/IDR Reference Rate (JISDOR)
     unit: idr_per_usd
@@ -120,6 +190,9 @@ indicators:
     frequency: monthly
     source: BI_SEKI
     source_table: TABEL5_40
+    source_sheets:
+      - "5.40"
+    source_row: USD
     role: reconciliation
     drift:
       warn:
@@ -128,3 +201,287 @@ indicators:
       circuit_breaker:
         type: relative
         value: 0.20
+  APBN_REVENUE:
+    name: Government Revenue and Grants (APBN)
+    unit: miliar_idr
+    frequency: annual
+    source: BI_SEKI
+    source_table: TABEL4_1
+    source_sheets:
+      - Th 1990-2000
+      - Th 2001-2007
+      - "4.1"
+    source_row: Pendapatan Negara dan Hibah
+  APBN_EXPENDITURE:
+    name: Government Expenditure (APBN)
+    unit: miliar_idr
+    frequency: annual
+    source: BI_SEKI
+    source_table: TABEL4_2
+    source_sheets:
+      - 1990-2000
+      - 2001-2007
+      - "4.2"
+    source_row: Belanja Negara
+  APBN_BALANCE:
+    name: Fiscal Balance (APBN)
+    unit: miliar_idr
+    frequency: annual
+    source: BI_SEKI
+    source_table: TABEL4_3
+    source_sheets:
+      - 1990-2000
+      - 2001-2007
+      - "4.3"
+    source_row: Surplus / Defisit
+  APBN_FINANCING:
+    name: Net Government Financing (APBN)
+    unit: miliar_idr
+    frequency: annual
+    source: BI_SEKI
+    source_table: TABEL4_3
+    source_sheets:
+      - 1990-2000
+      - 2001-2007
+      - "4.3"
+    source_row: Pembiayaan Bersih
+  SBN_OUTSTANDING:
+    name: Central Government Securities Outstanding (SBN)
+    unit: miliar_idr
+    frequency: monthly
+    source: BI_SEKI
+    source_table: TABEL4_4
+    source_sheets:
+      - "4.4"
+    source_row: SURAT UTANG NEGARA (SUN)
+  INFLASI_MOM:
+    name: Inflation (month-over-month)
+    unit: percent
+    frequency: monthly
+    source: BPS
+    source_domain: "0000"
+    source_var: 1
+    source_vervar: 9999
+    drift:
+      warn:
+        type: absolute_val
+        value: 1.0
+      circuit_breaker:
+        type: absolute_val
+        value: 5.0
+  GDP_GROWTH_YOY:
+    name: GDP Growth (year-on-year)
+    unit: percent
+    frequency: quarterly
+    source: BPS
+    source_domain: "0000"
+    source_var: 108
+    source_vervar: 800
+    source_turvar: 5
+    drift:
+      warn:
+        type: absolute_val
+        value: 1.0
+      circuit_breaker:
+        type: absolute_val
+        value: 5.0
+  CAR:
+    name: Capital Adequacy Ratio
+    unit: percent
+    frequency: monthly
+    source: OJK_SPI
+    source_catalog: PORTALSJKCUBE_BU
+    source_cube: BU_RasioKeuangan
+    source_measure: Rasio Keuangan
+    source_member: "[Akun].[Akun].&[001.Rasio Pemenuhan Kecukupan Modal Minimum (%)]"
+    drift:
+      warn:
+        type: absolute_bp
+        value: 100
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+  ROA:
+    name: Return on Assets
+    unit: percent
+    frequency: monthly
+    source: OJK_SPI
+    source_catalog: PORTALSJKCUBE_BU
+    source_cube: BU_RasioKeuangan
+    source_measure: Rasio Keuangan
+    source_member: "[Akun].[Akun].&[003.Return On Assets Ratio (%)]"
+    drift:
+      warn:
+        type: absolute_bp
+        value: 100
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+  LDR:
+    name: Loan to Deposit Ratio
+    unit: percent
+    frequency: monthly
+    source: OJK_SPI
+    source_catalog: PORTALSJKCUBE_BU
+    source_cube: BU_RasioKeuangan
+    source_measure: Rasio Keuangan
+    source_member: "[Akun].[Akun].&[006.Loan to Deposits Ratio (%)]"
+    drift:
+      warn:
+        type: absolute_bp
+        value: 100
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+  CAR_ANNUAL:
+    name: Capital Adequacy Ratio (annual backfill)
+    unit: percent
+    frequency: annual
+    source: OJK_SPI
+    source_sheet: "Kinerja_KBMI 1.16.-1.20."
+    source_row: "Rasio Pemenuhan Kecukupan Modal Minimum (%)"
+  ROA_ANNUAL:
+    name: Return on Assets (annual backfill)
+    unit: percent
+    frequency: annual
+    source: OJK_SPI
+    source_sheet: "Kinerja_KBMI 1.16.-1.20."
+    source_row: "Return On Assets Ratio (%)"
+  LDR_ANNUAL:
+    name: Loan to Deposit Ratio (annual backfill)
+    unit: percent
+    frequency: annual
+    source: OJK_SPI
+    source_sheet: "Kinerja_KBMI 1.16.-1.20."
+    source_row: "Loan to Deposits Ratio (%)"
+  NPL:
+    name: Non-Performing Loan Ratio
+    unit: percent
+    frequency: monthly
+    source: OJK_SPI
+    source_catalog: PORTALSJKCUBE_BU
+    source_cube: BU_KreditdanPembiayaanEntitas
+    source_mdx: "WITH MEMBER [Measures].[NPL Ratio] AS Aggregate({[Kualitas Kredit].[Kualitas Kredit].&[003. Kurang Lancar],[Kualitas Kredit].[Kualitas Kredit].&[004. Diragukan],[Kualitas Kredit].[Kualitas Kredit].&[005. Macet]},[Measures].[Kredit dan Pembiayaan Entitas])/[Measures].[Kredit dan Pembiayaan Entitas]*100 SELECT [Measures].[NPL Ratio] ON 0, NON EMPTY {[Bulan].[Bulan].members} ON 1 FROM [BU_KreditdanPembiayaanEntitas]"
+    drift:
+      warn:
+        type: absolute_bp
+        value: 100
+      circuit_breaker:
+        type: absolute_bp
+        value: 500
+  CREDIT_BY_SECTOR:
+    name: Bank Credit by Economic Sector
+    unit: idr
+    frequency: monthly
+    source: OJK_SPI
+    source_catalog: PORTALSJKCUBE_BU
+    source_cube: BU_KreditdanPembiayaanEntitas
+    source_measure: Kredit dan Pembiayaan Entitas
+    source_dimension: "[Sektor Ekonomi].[Sektor Ekonomi]"
+    drift:
+      warn:
+        type: relative
+        value: 0.15
+      circuit_breaker:
+        type: relative
+        value: 0.40
+  CHN_GDP_GROWTH:
+    name: China GDP Growth (year-on-year)
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: CHN
+    source_table: TABEL9_1
+    source_sheets:
+      - "9.1"
+    source_row: RRC
+  MYS_GDP_GROWTH:
+    name: Malaysia GDP Growth (year-on-year)
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: MYS
+    source_table: TABEL9_1
+    source_sheets:
+      - "9.1"
+    source_row: Malaysia
+  PHL_GDP_GROWTH:
+    name: Philippines GDP Growth (year-on-year)
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: PHL
+    source_table: TABEL9_1
+    source_sheets:
+      - "9.1"
+    source_row: Filipina
+  THA_GDP_GROWTH:
+    name: Thailand GDP Growth (year-on-year)
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: THA
+    source_table: TABEL9_1
+    source_sheets:
+      - "9.1"
+    source_row: Thailand
+  SGP_GDP_GROWTH:
+    name: Singapore GDP Growth (year-on-year)
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: SGP
+    source_table: TABEL9_1
+    source_sheets:
+      - "9.1"
+    source_row: Singapura
+  CHN_INFLATION:
+    name: China Inflation
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: CHN
+    source_table: TABEL9_2
+    source_sheets:
+      - "9.2"
+    source_row: RRC
+  MYS_INFLATION:
+    name: Malaysia Inflation
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: MYS
+    source_table: TABEL9_2
+    source_sheets:
+      - "9.2"
+    source_row: Malaysia
+  PHL_INFLATION:
+    name: Philippines Inflation
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: PHL
+    source_table: TABEL9_2
+    source_sheets:
+      - "9.2"
+    source_row: Filipina
+  THA_INFLATION:
+    name: Thailand Inflation
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: THA
+    source_table: TABEL9_2
+    source_sheets:
+      - "9.2"
+    source_row: Thailand
+  SGP_INFLATION:
+    name: Singapore Inflation
+    unit: percent
+    frequency: quarterly
+    source: BI_SEKI
+    geography: SGP
+    source_table: TABEL9_2
+    source_sheets:
+      - "9.2"
+    source_row: Singapura
