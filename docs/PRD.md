@@ -25,7 +25,7 @@ Non-goals: Airflow, Spark, Kafka, dbt Cloud, live public database access.
 | `BI_SEKI` | Bank Indonesia SEKI | Policy rate + interest-rate corridor (TABEL I.25.A/B), USD/IDR monthly middle rate (V.40), later monetary/fiscal/real/external tables | One ZIP per edition from the edition page |
 | `BI_JISDOR` | Bank Indonesia JISDOR | Daily USD/IDR reference rate | Bulk via date-range form POST on the JISDOR page (`ButtonExport` → `.xlsx`), proven 15 Oct 2026; BI documents revisions inline |
 | `BPS` | BPS | Inflation, regional GDP | WebAPI (JSON), file fallback |
-| `OJK_SPI` | OJK Indonesia Banking Statistics | NPL, CAR, LDR, credit by sector | SJKPublic portal only from the July 2025 data period (`data.ojk.go.id/SJKPublic`); edition pages frozen at June 2025, history backfill source — see ADR-0007 |
+| `OJK_SPI` | OJK Indonesia Banking Statistics | NPL, CAR, LDR, ROA, credit by sector | SJKPublic portal only from the July 2025 data period (`data.ojk.go.id/SJKPublic`); edition pages frozen at June 2025, annual history backfill under distinct `*_ANNUAL` codes — see ADR-0007 |
 | `KEMENKEU` | Ministry of Finance (optional) | APBN revenue/expenditure, debt | Publications |
 
 Verified facts that shape ingestion:
@@ -39,8 +39,7 @@ Verified facts that shape ingestion:
 - SEKI's June 2025 release introduced statistical concept revisions; Regimes record definitional breaks as data.
 - OJK moved SPI publication to the SJKPublic portal as of the July 2025 data period; edition pages end at June 2025, and OJK's `Mapping Statistik Perbankan SPI.xlsx` maps old report tables to portal datasets.
 - SEKI section IV republishes Kemenkeu APBN data (revenue, expenditure, financing, SBN), which is the preferred fiscal channel over scraping kemenkeu.go.id publications.
-- SJKPublic's data layer is an unauthenticated DevExtreme JSON cascade: `GetIndustriData` → `GetInformasiData?industriId=` → `GetMetricData?informasiId=` → `GetGridMeasure?refMetricId=` (proven 15 Oct 2026); the store params are the adapter contract, and Bronze stores the JSON responses as the artifact.
-
+- SJKPublic's _metadata_ is an unauthenticated DevExtreme JSON cascade: `GetIndustriData` → `GetInformasiData?industriId=` → `GetMetricData?informasiId=` → `GetGridMeasure?refMetricId=`; the measure _values_ come from a DevExpress `XmlaStore` (`POST /SJKPublic/datasource/`, one catalog/cube per metric) queried with **MDX over SOAP**, not JSON (proven 15 Oct 2026). The store params and the MDX are the adapter contract; Bronze stores both the metadata JSON and the XMLA responses as artifacts.
 ## Data Contracts
 
 Each adapter returns a standard envelope (`source_id`, `source_url`, `retrieved_at`, `period_start`, `period_end`, `source_file_sha256`, `ingestion_run_id`, `source_version`). One adapter's failure never erases another's successful ingestion. Parsers validate structure against expectations and fail loudly on drift.
@@ -58,15 +57,15 @@ Bronze is append-only and write-once; a re-released edition is a new Publication
 
 ## Data Model
 
-**Silver: `macro_observations`** (Parquet; logical Postgres mirror). Business key excludes the checksum; the checksum is lineage.
+**Silver: `macro_observations`** (Parquet in R2; schema-compatible with a Postgres table, but never copied into one). Business key excludes the checksum; the checksum is lineage. `dimension_code` is the optional second axis (an industry sector, bank group, or credit quality) and is empty for single-series indicators.
 
 ```
 source_id, source_table, indicator_code,
-period_start, period_end, frequency, geography_code,
+period_start, period_end, frequency, geography_code, dimension_code,
 original_value, original_unit, normalized_value, normalized_unit,
 source_raw_label, retrieved_at, source_file_sha256, ingestion_run_id,
 is_current, superseded_at
-PRIMARY KEY (source_id, source_table, indicator_code, period_start, geography_code)
+PRIMARY KEY (source_id, source_table, indicator_code, period_start, geography_code, dimension_code)
 ```
 
 Revisions upsert: old row gets `is_current = false, superseded_at = now`, new row inserted. Gold reads current rows only.
@@ -74,8 +73,8 @@ Revisions upsert: old row gets `is_current = false, superseded_at = now`, new ro
 **Gold**
 
 - Dimensions: `dim_date`, `dim_indicator`, `dim_indicator_regimes` (projected from `indicators.yml`), `dim_geography`
-- Facts: `fact_macro_periodic` — grain `(indicator_key, period_start, frequency, entity_code default 'IDN', sector_code default 'ALL')`; `fact_market_daily` — grain `(indicator_key, obs_date, entity_code)`; USD/IDR now, daily 2Y/5Y/10Y government bond yields later. Facts are current rows only, embedding `first_published_value`, `revision_count`, `last_revised_at`
-- Views: `vw_fx_monthly` (trading EOP + monthly average + `is_complete_month` flag), `vw_financial_outlook_monthly` (dashboard core), `vw_dashboard_freshness` (per-source lag + global health in one query), `vw_gold_revisions` (superseded Silver rows)
+- Facts: `fact_macro_periodic` — grain `(indicator_key, period_start, frequency, entity_code default 'IDN', sector_code default 'ALL')`; `fact_market_daily` — grain `(indicator_key, obs_date, entity_code)`; USD/IDR now. Facts are current rows only, embedding revision metadata (`first_published_value`, `revision_count`, `last_revised_at`) derived at projection time from Silver, never authoritative
+- Views: `vw_fx_monthly` (trading EOP + monthly average + `is_complete_month` flag), `vw_financial_outlook_monthly` (dashboard core), `vw_financial_outlook_annual` (annual fiscal series + pre-portal `*_ANNUAL` ratios), `vw_dashboard_freshness` (per-source lag + global health in one query), `vw_gold_revisions` (superseded Silver rows)
 
 Mixed frequencies are never equated at join time; the dashboard compares via explicit rules on exposed frequency. Monthly FX aggregates are derived views, never stored rows.
 
@@ -91,7 +90,7 @@ Uniqueness at grain; completeness of required fields and periods; validity of un
 
 A lightweight availability probe runs daily at 02:30 UTC on the 15th–28th (the SEKI release window) plus weekdays for BI_JISDOR; against `ops.source_runs` the probe is a near-no-op once the target edition is ingested. Per-source transactions publish Gold; cross-source reconciliation runs non-blocking afterwards. `ops.pipeline_runs` (one row per Run) and `ops.source_runs` (one row per Source Run) are the only ops tables. The seed loader is idempotent on the seed checksum recorded in `ops.source_runs`. Known free-tier constraints handled explicitly: Supabase pause (weekly keep-alive) and GitHub's 60-day schedule auto-disable (failure notifications + periodic activity).
 
-M1 builds the JISDOR adapter directly against the proven bulk path: a date-range form POST (`HiddenFieldDateFrom/To` + `ButtonExport`) returns a multi-month `.xlsx` (no pagination scraping); export dates arrive as M/D/YYYY strings and the sheet carries three junk title rows. SEKI's monthly V.40 rate remains the reconciliation cross-check.
+M1 builds the JISDOR adapter directly against the proven bulk path: a date-range form POST (`TextBoxFrom`/`TextBoxDateTo` + `ButtonExport`) returns a multi-month `.xlsx` (no pagination scraping); export dates arrive as M/D/YYYY strings and the sheet carries three junk title rows. SEKI's monthly V.40 rate remains the reconciliation cross-check.
 
 ## Dashboard Delivery
 
@@ -99,10 +98,10 @@ Develop in Tableau Desktop live against Gold via the Supabase session pooler (IP
 
 ## Milestones
 
-1. **Vertical slice**: `POLICY_RATE` plus raw corridor codes (`BI7DR`, `BI_RATE`, `DF_RATE`, `LF_RATE`), USD/IDR, SEKI parsing from 2019, pre-2019 history from era sheets (static seed only for verified gaps), migrations, ops tables, first quality gates, dashboard published.
-2. **BPS inflation** via WebAPI; JISDOR daily if deferred; bond yields into `fact_market_daily`.
-3. **OJK banking metrics** via SJKPublic after a timeboxed download spike (ADR-0007); credit by sector via `sector_code`.
-4. **Extensions**: regional context (PHL, VNM, MYS, CHN, THA, SGP via SEKI IX tables), Kemenkeu fiscal data via SEKI section IV tables.
+1. **Vertical slice (BI)**: `POLICY_RATE` plus raw corridor codes (`BI7DR`, `BI_RATE`, `DF_RATE`, `LF_RATE`), money supply, USD/IDR, SEKI parsing from 2019, pre-2019 history from era sheets (static seed only for verified gaps), migrations, ops tables, first quality gates, first Gold view and freshness published.
+2. **BPS**: inflation and GDP growth via WebAPI (file fallback), with comparison periods and calculation rules defined per frequency.
+3. **OJK**: banking metrics via SJKPublic after a timeboxed download spike (ADR-0007) — credit by sector via `sector_code`, NPL, CAR, LDR, ROA.
+4. **Context and presentation**: regional context (PHL, VNM, MYS, CHN, THA, SGP via SEKI IX tables), curated event dataset (a Seed), Kemenkeu fiscal data via SEKI section IV tables.
 
 ## Deliverables
 

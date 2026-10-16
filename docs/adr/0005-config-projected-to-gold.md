@@ -8,3 +8,4 @@ The rejected alternative — maintaining the same constants in YAML, Python, and
 
 - Changing an indicator's definition is a config commit, not a migration.
 - Gold config projections are rebuilt from YAML on every run; they are never hand-edited.
+- A rebuild also removes a Source or geography dropped from YAML, and blocks (rather than deletes data) when a dropped Indicator still has facts.

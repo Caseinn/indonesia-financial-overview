@@ -46,6 +46,10 @@ _Avoid_: correction, update
 A named date range over which an Indicator's definition or source series stayed constant (e.g. the BI-7DR transition of July 2022).
 _Avoid_: era, definition period
 
+**Gold Projection**:
+The current-state rows projected from Silver into Gold at load time. Revision metadata (`first_published_value`, `revision_count`, `last_revised_at`) is derived during that projection and is never authoritative; Silver remains the only source of revision history.
+_Avoid_: mirror, copy
+
 ## Execution
 
 **Run**:
