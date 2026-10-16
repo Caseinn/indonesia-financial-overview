@@ -1,0 +1,31 @@
+# Curated economic events for dashboard annotations.
+#
+# A Seed, not a scraped Source: keep entries few, dated, and verifiable. The
+# loader is idempotent on this file's checksum, recorded in ops.source_runs, so
+# editing an event republishes the table and an untouched file is skipped.
+
+events:
+  - date: 1998-05-21
+    code: SOEHARTO_RESIGNS
+    category: political
+    title: Soeharto resigns
+    description: End of the 32-year New Order; rupiah and rates in crisis.
+    source_url: https://en.wikipedia.org/wiki/Fall_of_Suharto
+  - date: 2008-09-15
+    code: LEHMAN_BANKRUPTCY
+    category: global
+    title: Lehman Brothers files for bankruptcy
+    description: Global financial crisis; sharp capital outflow from emerging markets.
+    source_url: https://en.wikipedia.org/wiki/Bankruptcy_of_Lehman_Brothers
+  - date: 2020-03-02
+    code: COVID_FIRST_CASES
+    category: pandemic
+    title: First COVID-19 cases confirmed in Indonesia
+    description: Start of the pandemic shock to activity, the rupiah, and rates.
+    source_url: https://en.wikipedia.org/wiki/COVID-19_pandemic_in_Indonesia
+  - date: 2022-06-23
+    code: BI_HIKING_CYCLE
+    category: monetary
+    title: Bank Indonesia begins its hiking cycle
+    description: First policy-rate increase after the pandemic, ending the easing cycle.
+    source_url: https://www.bi.go.id/en/statistik/indikator/bi-rate.aspx
