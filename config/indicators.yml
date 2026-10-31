@@ -22,28 +22,28 @@ sources:
       probe_window:
         start_day: 15
         end_day: 28
-      release_lag_days: 10
+      refresh_days: 35
   BI_JISDOR:
     name: Bank Indonesia JISDOR
     artifact: daily_page
     url: https://www.bi.go.id/id/statistik/informasi-kurs/jisdor/
     cadence:
       frequency: weekday
-      release_lag_days: 4
+      refresh_days: 4
   BPS:
     name: Badan Pusat Statistik
     artifact: json_api
     url: https://webapi.bps.go.id
     cadence:
       frequency: monthly
-      release_lag_days: 1
+      refresh_days: 35
   OJK_SPI:
     name: OJK Indonesia Banking Statistics
     artifact: xmla
     url: https://data.ojk.go.id/SJKPublic
     cadence:
       frequency: monthly
-      release_lag_days: 10
+      refresh_days: 35
 
 indicators:
   POLICY_RATE:

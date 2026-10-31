@@ -54,10 +54,10 @@ class Regime:
 
 @dataclass(frozen=True, slots=True)
 class Cadence:
-    """Expected publication timing for a Source."""
+    """Publication schedule and freshness window for a Source."""
 
     frequency: str | None = None
-    release_lag_days: int | None = None
+    refresh_days: int | None = None
     probe_start_day: int | None = None
     probe_end_day: int | None = None
 
@@ -137,9 +137,9 @@ class IndicatorsConfig:
             raise ConfigError(f"unknown source_id: {source_id}") from exc
 
 
-def load_config(path: Path | str = DEFAULT_CONFIG_PATH) -> IndicatorsConfig:
+def load_config(path: Path | str | None = None) -> IndicatorsConfig:
     """Read, parse, and validate the indicators config file."""
-    path = Path(path)
+    path = Path(path) if path is not None else DEFAULT_CONFIG_PATH
     try:
         raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
@@ -232,7 +232,7 @@ def _parse_sources(raw: Mapping[str, Any]) -> dict[str, SourceConfig]:
             url=str(node.get("url", "")),
             cadence=Cadence(
                 frequency=cadence_raw.get("frequency"),
-                release_lag_days=cadence_raw.get("release_lag_days"),
+                refresh_days=cadence_raw.get("refresh_days"),
                 probe_start_day=window.get("start_day"),
                 probe_end_day=window.get("end_day"),
             ),

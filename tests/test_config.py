@@ -27,6 +27,8 @@ def test_loads_committed_config() -> None:
     seki = config.source("BI_SEKI")
     assert seki.cadence.probe_start_day == 15
     assert seki.cadence.probe_end_day == 28
+    assert seki.cadence.refresh_days == 35
+    assert config.source("BI_JISDOR").cadence.refresh_days == 4
 
 
 def test_indicator_lookup_has_business_fields() -> None:
