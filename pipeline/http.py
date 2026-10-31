@@ -14,6 +14,7 @@ from collections.abc import Callable
 import requests
 
 from pipeline.parsing import ParseError
+from pipeline.redaction import redact
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -76,7 +77,12 @@ def request_with_retry[T](
         except (requests.RequestException, ParseError) as exc:
             last_error = exc
             _logger.warning(
-                "%s: %s attempt %d/%d failed: %s", source_id, label, attempt, attempts, exc
+                "%s: %s attempt %d/%d failed: %s",
+                source_id,
+                label,
+                attempt,
+                attempts,
+                redact(str(exc)),
             )
             if attempt < attempts:
                 sleep(backoff)
