@@ -1,0 +1,39 @@
+[project]
+name = "indonesia-financial"
+version = "0.1.0"
+description = "Indonesia Financial Overview pipeline: sources to Bronze (R2), Silver (Parquet), Gold (Parquet), static JSON, web dashboard."
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.35.0",
+    "openpyxl>=3.1.5",
+    "pandas>=2.2.3",
+    "pyarrow>=18.0.0",
+    "python-dotenv>=1.0.1",
+    "pytz>=2026.6",
+    "pyyaml>=6.0.2",
+    "requests>=2.32.3",
+    "xlrd>=2.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "ruff>=0.8.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint.per-file-ignores]
+"pipeline/export_web.py" = ["BLE001"]
+"pipeline/run_monthly.py" = ["BLE001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

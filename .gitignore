@@ -14,4 +14,6 @@ dist/
 *.egg-info/
 .env
 .env.*
+!web/.env.example
+!web/.env.production
 .DS_Store
