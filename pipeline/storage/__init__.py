@@ -1,1 +1,1 @@
-"""Storage stages that move Publications from raw Bronze to queryable Gold."""
+"""Storage stages for Bronze, Silver, and Gold."""

@@ -1,10 +1,9 @@
-"""Load the curated events Seed into Gold, idempotently.
+"""Load the curated events Seed into the Gold dimension.
 
 Events annotate the dashboard with dated context (crises, policy turns) that no
-official API serves. The file is the source of truth; its checksum is recorded
-in ``ops.source_runs`` so an unchanged Seed is skipped and an edited one
-republishes the whole table (ADR-0005: config-like data is projected, not
-hand-edited in SQL).
+official API serves. The file is the source of truth; every Run reads it and
+projects it into ``dim_events``, so editing the file is enough to change the
+published context (ADR-0005).
 """
 
 from __future__ import annotations
@@ -50,7 +49,7 @@ class Event:
 
 
 def seed_checksum(path: Path | str = DEFAULT_SEED_PATH) -> str:
-    """Return the Seed file's checksum, the idempotency key for the loader."""
+    """Return the Seed file's checksum for lineage and change detection."""
     return sha256_hex(Path(path).read_bytes())
 
 
