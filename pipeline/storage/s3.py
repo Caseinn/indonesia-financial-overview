@@ -1,6 +1,6 @@
 """Shared S3-compatible client setup for the storage stages.
 
-Bronze and Silver both talk to Cloudflare R2 through the S3 API, so the client
+The storage stages talk to Cloudflare R2 through the S3 API, so the client
 construction and the "object is absent" test live here once instead of being
 repeated per stage.
 """

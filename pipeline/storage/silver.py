@@ -3,7 +3,7 @@
 Silver is long-form ``macro_observations`` Parquet partitioned by source and
 year. Observations are upserted on their business key (ADR-0001): a rerun with
 identical values is a no-op, a changed value flips ``is_current`` on the old row
-and appends the new one, so Gold can read current rows while ``vw_gold_revisions``
+and appends the new one, so Gold can read current rows while the revision view
 still exposes superseded ones. The value shift is handed back as a ``Revision``
 so the drift gate can flag it (ADR-0002).
 """
@@ -11,7 +11,7 @@ so the drift gate can flag it (ADR-0002).
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Collection, Iterator, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from io import BytesIO
@@ -176,13 +176,19 @@ class SilverStore:
         )
 
     def current_values(
-        self, observations: Sequence[Observation]
+        self,
+        observations: Sequence[Observation],
+        *,
+        excluded_checksums: Collection[str] = (),
     ) -> dict[tuple[object, ...], float]:
         """Return the currently published value per business key for these Observations.
 
         Drift is measured against what Gold already shows, so the gate reads the
-        pre-upsert snapshot rather than the freshly merged rows.
+        pre-upsert snapshot rather than the freshly merged rows. Rejected
+        publications are excluded and the previous revision is re-folded, because
+        Silver still stores a quarantined row as ``is_current`` after a breaker.
         """
+        blocked = frozenset(excluded_checksums)
         values: dict[tuple[object, ...], float] = {}
         partitions = {
             (observation.source_id, observation.period_start.year) for observation in observations
@@ -191,7 +197,8 @@ class SilverStore:
             frame = self.read(self._path(source_id, year))
             if frame is None:
                 continue
-            for _, row in frame[frame["is_current"]].iterrows():
+            current = _fold_publishable(frame, blocked) if blocked else frame[frame["is_current"]]
+            for _, row in current.iterrows():
                 values[_key(row)] = float(row["normalized_value"])
         return values
 
@@ -202,8 +209,33 @@ class SilverStore:
             return pd.DataFrame(columns=COLUMNS)
         return pd.concat(frames, ignore_index=True)
 
+    def read_all(self) -> pd.DataFrame:
+        """Load every Silver partition, because Gold is rebuilt from scratch.
+
+        A full read is the only way to keep the rebuilt Gold consistent: it sees
+        Sources that did not run this time as well as the full revision history.
+        """
+        prefix = f"{self._root}/{self._dataset}/"
+        frames = [frame for key in self._keys(prefix) if (frame := self.read(key)) is not None]
+        if not frames:
+            return pd.DataFrame(columns=COLUMNS)
+        return pd.concat(frames, ignore_index=True)
+
     def _path(self, source_id: str, year: int) -> str:
         return f"{self._root}/{self._dataset}/source={source_id}/year={year}/{PART_FILE}"
+
+    def _keys(self, prefix: str) -> Iterator[str]:
+        token: str | None = None
+        while True:
+            kwargs: dict[str, object] = {"Bucket": self._bucket, "Prefix": prefix}
+            if token is not None:
+                kwargs["ContinuationToken"] = token
+            response = self._client.list_objects_v2(**kwargs)
+            for item in response.get("Contents") or ():
+                yield str(item["Key"])
+            if not response.get("IsTruncated"):
+                return
+            token = response.get("NextContinuationToken")
 
     def read(self, key: str) -> pd.DataFrame | None:
         """Read one Silver partition, or return ``None`` when it does not exist."""
@@ -279,6 +311,16 @@ def _key(record: object) -> tuple[object, ...]:
 
 def _signature(record: object) -> tuple[object, ...]:
     return tuple(record[column] for column in VALUE_COLUMNS)
+
+
+def _fold_publishable(frame: pd.DataFrame, excluded: frozenset[str]) -> pd.DataFrame:
+    """Re-derive the current row per key after dropping rejected publications."""
+    kept = frame[~frame["source_file_sha256"].isin(excluded)]
+    if kept.empty:
+        return kept
+    ordered = kept.sort_values(list(KEY_COLUMNS) + ["retrieved_at"], kind="stable")
+    current = ordered.groupby(list(KEY_COLUMNS), dropna=False, sort=False).tail(1).index
+    return kept[kept.index.isin(current)]
 
 
 def store_from_env(*, dataset: str = DATASET, root: str = ROOT) -> SilverStore:

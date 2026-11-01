@@ -144,6 +144,17 @@ def test_current_values_returns_the_published_snapshot() -> None:
     assert values == {observation().business_key: 14000.0}
 
 
+def test_current_values_falls_back_to_the_previous_revision_when_excluded() -> None:
+    client = FakeS3()
+    store = SilverStore(client, "bucket")
+    store.upsert((observation(value=14000.0, sha="a" * 64),))
+    store.upsert((observation(value=20000.0, sha="b" * 64),), at=AT)
+
+    values = store.current_values((observation(),), excluded_checksums=("b" * 64,))
+
+    assert values == {observation().business_key: 14000.0}
+
+
 def test_frame_for_concatenates_written_partitions() -> None:
     client = FakeS3()
     store = SilverStore(client, "bucket")
@@ -152,6 +163,32 @@ def test_frame_for_concatenates_written_partitions() -> None:
     frame = store.frame_for(write.partitions)
 
     assert len(frame) == 2
+    assert list(frame.columns) == list(SCHEMA.names)
+
+
+def test_read_all_concatenates_every_partition() -> None:
+    client = FakeS3()
+    store = SilverStore(client, "bucket")
+    store.upsert(
+        (
+            observation(period_start=date(2020, 1, 1)),
+            observation(period_start=date(2021, 1, 1), value=14500.0),
+        )
+    )
+
+    frame = store.read_all()
+
+    assert len(frame) == 2
+    assert list(frame.columns) == list(SCHEMA.names)
+    assert set(frame["normalized_value"]) == {14000.0, 14500.0}
+
+
+def test_read_all_on_empty_store_returns_an_empty_frame() -> None:
+    store = SilverStore(FakeS3(), "bucket")
+
+    frame = store.read_all()
+
+    assert frame.empty
     assert list(frame.columns) == list(SCHEMA.names)
 
 
