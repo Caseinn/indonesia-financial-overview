@@ -1,0 +1,103 @@
+{
+"status": "OK",
+"data-availability": "available",
+"labelvervar": "Kota Inflasi",
+"var": [
+{
+"val": 1,
+"label": "Inflasi Bulanan (M-to-M)",
+"unit": "Persen",
+"subj": "Inflasi",
+"def": "",
+"decimal": 2,
+"note": "<p><br /></p><p>1. Sebelum April 1979, yang digunakan sebagai dasar yaitu September 1966 ( September 1966 = 100 )<br />\n2. Mulai April 1979, digunakan istilah Indeks Harga Konsumen (sebelumnya menggunakan istilah Index Biaya Hidup). Dasarnya April 1977-Maret 1978. Menggunakan pola konsumsi hasil SBH (Survey Biaya Hidup ) tahun 1977/1978 di 17 ibukota propinsi ( April 1977-Maret 1978 = 100 ).<br />\n3. Mulai April 1990-1997, IHK menggunakan tahun dasar 1988/1989. Menggunakan pola konsumsi biaya hidup hasil SBH di 27 ibukota propinsi. (1988/1989 = 100 )<br />\n4. Mulai Desember 1997, IHK menggunakan pola konsumsi hasil SBH di 44 Kota tahun 1996. ( 1996 = 100)<br />\n5. Mulai Januari 2004, digunakan tahun dasar 2002. IHK dihitung berdasarkan pola konsumsi hasil SBH di 45 kota tahun 2002 ( 2002 = 100 )<br />\n6. Mulai Juni 2008, digunakan tahun dasar 2007, IHK dihitung berdasarkan pola konsumsi hasil SBH di 66 kota tahun 2007 (2007 = 100)<br />\n7. Mulai Tahun 2014, digunakan tahun dasar 2012, IHK dihitung berdasarkan pola konsumsi hasil SBH di 82 kota tahun 2012 (2012 = 100)<br />\n8. Mulai Tahun 2020, digunakan tahun dasar 2018, IHK dihitung berdasarkan pola konsumsi hasil SBH di 90 kota tahun 2018 (2018=100)<br />\n9. Mulai Tahun 2024, digunakan tahun dasar 2022, IHK dihitung berdasarkan pola konsumsi hasil SBH di 150 Kabupaten/Kota tahun 2022 (2022=100)<br /></p><p><br /></p>"
+}
+],
+"turvar": [
+{
+"val": "0",
+"label": "Tidak ada"
+}
+],
+"vervar": [
+{
+"val": 9999,
+"label": "INDONESIA"
+}
+],
+"tahun": [
+{
+"val": 125,
+"label": "2025"
+}
+],
+"turtahun": [
+{
+"val": 1,
+"label": "Januari"
+},
+{
+"val": 2,
+"label": "Februari"
+},
+{
+"val": 3,
+"label": "Maret"
+},
+{
+"val": 4,
+"label": "April"
+},
+{
+"val": 5,
+"label": "Mei"
+},
+{
+"val": 6,
+"label": "Juni"
+},
+{
+"val": 7,
+"label": "Juli"
+},
+{
+"val": 8,
+"label": "Agustus"
+},
+{
+"val": 9,
+"label": "September"
+},
+{
+"val": 10,
+"label": "Oktober"
+},
+{
+"val": 11,
+"label": "November"
+},
+{
+"val": 12,
+"label": "Desember"
+},
+{
+"val": 13,
+"label": "Tahunan"
+}
+],
+"last_update": "2026-10-01 11:23:07",
+"datacontent": {
+"9999101252": -0.48,
+"9999101256": 0.19,
+"9999101258": -0.08,
+"9999101251": -0.76,
+"9999101259": 0.21,
+"99991012510": 0.28,
+"9999101255": -0.37,
+"9999101257": 0.3,
+"99991012511": 0.17,
+"99991012512": 0.64,
+"9999101254": 1.17,
+"9999101253": 1.65
+}
+}

@@ -1,0 +1,64 @@
+{
+"status": "OK",
+"data-availability": "available",
+"labelvervar": "PDB Pengeluaran (Seri 2010)",
+"var": [
+{
+"val": 108,
+"label": "[Seri 2010] 4. Laju Pertumbuhan PDB menurut Pengeluaran",
+"unit": "Persen",
+"subj": "Produk Domestik Bruto (Pengeluaran)",
+"def": "",
+"decimal": 2,
+"note": "<p><br /></p><p>2024: Angka sementara <br />\n2025: Angka sangat sementara <br />\n2026: Angka sangat sangat sementara <br /></p><p><br /></p>"
+}
+],
+"turvar": [
+{
+"val": 5,
+"label": "Laju Pertumbuhan Triwulanan terhadap Triwulan yang Sama Tahun Sebelumnya (y-on-y)"
+}
+],
+"vervar": [
+{
+"val": 800,
+"label": "8. PRODUK DOMESTIK BRUTO"
+}
+],
+"tahun": [
+{
+"val": 125,
+"label": "2025"
+}
+],
+"turtahun": [
+{
+"val": 31,
+"label": "Triwulan I"
+},
+{
+"val": 32,
+"label": "Triwulan II"
+},
+{
+"val": 33,
+"label": "Triwulan III"
+},
+{
+"val": 34,
+"label": "Triwulan IV"
+},
+{
+"val": 35,
+"label": "Tahunan"
+}
+],
+"last_update": "2026-09-03 20:19:50",
+"datacontent": {
+"800108512534": 5.39,
+"800108512531": 4.87,
+"800108512535": 5.11,
+"800108512533": 5.04,
+"800108512532": 5.12
+}
+}
