@@ -1,4 +1,12 @@
-import { Bar, BarChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ReferenceArea,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 import { ChartEmpty, InfoPanel, ValueTooltip } from "@/components/chart-primitives"
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart"
@@ -12,6 +20,7 @@ import {
 import type { MonthlyOverviewRow } from "@/lib/data"
 import { inflationYoy } from "@/lib/derived"
 import { formatMonth, formatPercent } from "@/lib/format"
+import { INFLATION_TARGET_ERAS } from "@/lib/inflation-target"
 import { useYearTickInterval } from "@/lib/use-year-tick-interval"
 
 const chartConfig = {
@@ -36,6 +45,23 @@ export function InflationCard({ data }: InflationCardProps) {
   if (points.length === 0) {
     return <ChartEmpty>No inflation history published yet.</ChartEmpty>
   }
+
+  const targetBands = INFLATION_TARGET_ERAS.flatMap((era) => {
+    const window = points.filter(
+      (point) => point.period_start >= era.start && point.period_start <= era.end,
+    )
+    if (window.length === 0) return []
+    return [
+      {
+        key: era.start,
+        x1: window[0].label,
+        x2: window[window.length - 1].label,
+        y1: era.target - era.corridor,
+        y2: era.target + era.corridor,
+        label: era.label,
+      },
+    ]
+  })
 
   return (
     <div>
@@ -69,6 +95,25 @@ export function InflationCard({ data }: InflationCardProps) {
               tickFormatter={(value: number) => `${value}%`}
               tick={axisTick}
             />
+            {targetBands.map((band) => (
+              <ReferenceArea
+                key={band.key}
+                x1={band.x1}
+                x2={band.x2}
+                y1={band.y1}
+                y2={band.y2}
+                fill="var(--chart-4)"
+                fillOpacity={0.24}
+                stroke="none"
+                ifOverflow="extendDomain"
+                label={{
+                  value: band.label,
+                  position: "insideTopLeft",
+                  fill: "var(--color-muted-ink)",
+                  fontSize: 9,
+                }}
+              />
+            ))}
             <ReferenceLine y={0} stroke="var(--color-line)" />
             <ChartTooltip
               content={<ValueTooltip config={chartConfig} format={formatTwo} />}
@@ -86,8 +131,10 @@ export function InflationCard({ data }: InflationCardProps) {
       </div>
 
       <InfoPanel>
-        Year-on-year inflation is compounded from BPS month-over-month changes. The chart starts in
-        2017. Missing months appear as gaps, not zeros.
+        Year-on-year inflation compounds BPS month-over-month changes. Shaded steps show the
+        inflation target the Government sets for Bank Indonesia: 4% ±1% in 2017, 3.5% ±1% in 2018
+        and 2019, 3% ±1% from 2020 to 2023, and 2.5% ±1% from 2024 to 2027 (PMK 31/2024). Missing
+        months stay blank.
       </InfoPanel>
     </div>
   )

@@ -113,8 +113,8 @@ export function RegionalCard({ data }: RegionalCardProps) {
       </div>
 
       <InfoPanel>
-        The window runs from {first} to {last}, the latest quarter shared by every country. Source
-        series cover Indonesia, the Philippines, Malaysia, Thailand, Singapore, and China.
+        The window runs from {first} to {last}, the latest quarter shared by every country. Each
+        line is a country&apos;s reported YoY, with Indonesia drawn thicker.
       </InfoPanel>
     </div>
   )

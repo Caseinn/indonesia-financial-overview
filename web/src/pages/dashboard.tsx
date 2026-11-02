@@ -210,7 +210,7 @@ export function DashboardPage() {
             id="regional"
             index="08"
             title="Regional Comparison"
-            subtitle="Indonesia beside five regional peers."
+            subtitle="Indonesia beside five regional peers, all on a YoY basis."
             meta={"2017\u20132024"}
             className="xl:col-span-12"
           >
