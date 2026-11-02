@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Indonesia Financial Overview — Official Macro Data</title>
+    <meta
+      name="description"
+      content="Monthly official data on Indonesia's policy rate, money supply, inflation, rupiah, fiscal position, and banks, from Bank Indonesia, BPS, and OJK."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#0e3134" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link
+      rel="preload"
+      as="fetch"
+      href="%VITE_DATA_BASE_URL%/financial_overview_monthly.json"
+      crossorigin
+    />
+    <link rel="preload" as="fetch" href="%VITE_DATA_BASE_URL%/monetary_policy.json" crossorigin />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <main>
+        <h1>Indonesia Financial Overview</h1>
+        <p>
+          Monthly official data on Indonesia's policy rate, money supply, inflation, rupiah, fiscal
+          position, and banking system, sourced from Bank Indonesia, BPS, and OJK.
+        </p>
+        <p>
+          The interactive charts need JavaScript. Read the <a href="/">dashboard overview</a> or
+          the <a href="/guide">reading guide</a> for plain-language explanations of each indicator.
+        </p>
+        <ul>
+          <li><a href="https://www.bi.go.id/id/statistik/">Bank Indonesia statistics</a></li>
+          <li><a href="https://www.bps.go.id/id">BPS statistics</a></li>
+          <li><a href="https://data.ojk.go.id/SJKPublic">OJK statistics</a></li>
+        </ul>
+      </main>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
