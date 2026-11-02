@@ -219,7 +219,14 @@ export function seoPlugin(siteUrl: string): Plugin {
       const directory = resolve(outDir)
       mkdirSync(directory, { recursive: true })
 
-      const robotsLines = ["User-agent: *", "Allow: /", ""]
+      const robotsLines = [
+        "User-agent: *",
+        "Allow: /",
+        "",
+        "User-agent: __usage_ai-training",
+        "Disallow: /",
+        "",
+      ]
       if (normalized) robotsLines.push(`Sitemap: ${normalized}/sitemap.xml`)
       writeFileSync(resolve(directory, "robots.txt"), `${robotsLines.join("\n")}\n`, "utf8")
 
