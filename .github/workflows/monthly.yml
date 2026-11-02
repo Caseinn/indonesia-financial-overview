@@ -1,0 +1,44 @@
+name: monthly
+
+on:
+  schedule:
+    - cron: "30 2 * * 1-5"
+    - cron: "30 2 15-28 * *"
+  workflow_dispatch:
+    inputs:
+      start:
+        description: Inclusive period start (YYYY-MM-DD); defaults to the lookback window
+        required: false
+      end:
+        description: Inclusive period end (YYYY-MM-DD); defaults to today
+        required: false
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - name: Run pipeline
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_BUCKET: ${{ secrets.R2_PUBLIC_BUCKET }}
+          R2_PUBLIC_PREFIX: ${{ vars.R2_PUBLIC_PREFIX || 'web/data' }}
+          BPS_API_KEY: ${{ secrets.BPS_API_KEY }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          args="--trigger ${GITHUB_EVENT_NAME}"
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ] && [ "${{ github.event.schedule }}" = "30 2 * * 1-5" ]; then
+            args="$args --sources BI_JISDOR"
+          fi
+          if [ -n "${{ inputs.start }}" ]; then args="$args --start ${{ inputs.start }}"; fi
+          if [ -n "${{ inputs.end }}" ]; then args="$args --end ${{ inputs.end }}"; fi
+          uv run python -m pipeline.run_monthly $args
