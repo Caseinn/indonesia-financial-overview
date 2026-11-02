@@ -7,7 +7,7 @@ The rejected alternative — keeping the adapter on edition pages — tracks a c
 ## Consequences
 
 - SJKPublic coverage starts at the July 2025 period; earlier periods are a one-time backfill from the frozen pages, and the two coverages stay disjoint.
-- The pre-portal ratios carry their own `*_ANNUAL` indicator codes because their natural frequency is annual; `dim_indicator.frequency` stays truthful, the monthly view stays monthly-only, and `vw_financial_outlook_annual` surfaces the annual series.
+- The pre-portal ratios carry their own `*_ANNUAL` indicator codes because their natural frequency is annual; `dim_indicator.frequency` stays truthful, the monthly view stays monthly-only, and `vw_financial_overview_annual` surfaces the annual series.
 - The portal splits into two protocols, both unauthenticated and confirmed live 15 October 2026: a DevExtreme JSON cascade for metadata (`GetIndustriData` → `GetInformasiData` → `GetMetricData` → `GetGridMeasure`) and a DevExpress `XmlaStore` for the measure values (`POST /SJKPublic/datasource/`, catalog/cube per metric), queried as **MDX over SOAP**. The adapter speaks both; Bronze stores the metadata JSON and the XMLA responses as artifacts.
 - The mapping document is input, not truth: portal datasets it cannot place fail loudly like any other drift.
 - A failed spike escalates instead of blocking: artifacts can be downloaded manually into Bronze with full provenance, leaving Silver and Gold untouched.

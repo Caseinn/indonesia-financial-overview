@@ -1,6 +1,6 @@
-# Indonesia Financial Outlook
+# Indonesia Financial Overview
 
-Glossary for the Indonesia Financial Outlook platform: the shared vocabulary for ingesting official Indonesian macroeconomic and financial statistics through a Bronze-Silver-Gold pipeline into Tableau.
+Glossary for the Indonesia Financial Overview platform: the shared vocabulary for ingesting official Indonesian macroeconomic and financial statistics through a Bronze-Silver-Gold pipeline into the public web dashboard.
 
 ## Sources and publications
 
@@ -47,7 +47,7 @@ A named date range over which an Indicator's definition or source series stayed 
 _Avoid_: era, definition period
 
 **Gold Projection**:
-The current-state rows projected from Silver into Gold at load time. Revision metadata (`first_published_value`, `revision_count`, `last_revised_at`) is derived during that projection and is never authoritative; Silver remains the only source of revision history.
+The current-state rows projected from Silver into Gold at load time and persisted as Parquet. Revision metadata (`first_published_value`, `revision_count`, `last_revised_at`) is derived during that projection and is never authoritative; Silver remains the only source of revision history.
 _Avoid_: mirror, copy
 
 ## Execution

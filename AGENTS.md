@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Financial data pipeline: official sources → Bronze (R2) → Silver (Parquet) → Gold (Supabase PostgreSQL) → Tableau. Python 3.12 managed by uv, Pandas, PyArrow, orchestrated by GitHub Actions.
+Financial data pipeline: official sources → Bronze (raw artifacts in R2) → Silver (Parquet) → Gold (Parquet) → static JSON snapshot (public R2) → web dashboard (Vercel). Python 3.12 managed by uv, Pandas, PyArrow, orchestrated by GitHub Actions.
 
 ### Principles
 
@@ -51,7 +51,8 @@ Financial data pipeline: official sources → Bronze (R2) → Silver (Parquet) �
 - Parsers validate structure (headers, indicator labels, sheet shape) against expectations and **fail loudly** on drift — never silently import misaligned columns.
 - **Never trust file extensions.** Route every source-file load through the magic-byte sniffer in `pipeline/parsing.py` (`D0 CF 11 E0` → xlrd, `50 4B 03 04` → openpyxl, HTML/XML fallback): government portals serve `.xlsx`, SpreadsheetML, or HTML disguised as `.xls`.
 - Source requests are paced and retried: reuse sessions, keep a delay between calls, and back off on throttling. BI's WAF drops request bursts outright (verified: failures clear after roughly 20 s of quiet).
-- Gold writes happen inside one transaction after quality gates pass; every run records an outcome in `ops.pipeline_runs`.
+- Gold is rebuilt from Silver on every run after quality gates pass, written as Parquet under `gold/` in R2, and exported as a static JSON snapshot; there is no hosted database, so every run records its outcome as JSON under `ops/runs` in R2.
+- Gold Parquet under `gold/` is a derived, disposable copy for inspection. Never read it back as a pipeline input; rebuild from Silver instead.
 - Never auto-delete or overwrite implausible values — flag them for review; real economic shocks exist.
 
 ### Tests

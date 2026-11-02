@@ -1,20 +1,20 @@
-# PRD: Indonesia Financial Outlook
+# PRD: Indonesia Financial Overview
 
-A small, production-minded data platform for Indonesian macroeconomic and financial indicators. Official data flows from source publications through immutable object storage and normalized Parquet into PostgreSQL, and out to a public Tableau dashboard. All sources verified live 15 October 2026.
+A small, production-minded data platform for Indonesian macroeconomic and financial indicators. Official data flows from source publications through immutable object storage and normalized Parquet into a Parquet Gold layer, and out to a public web dashboard as static JSON snapshots. All sources verified live 15 October 2026.
 
 ## Goal
 
-One trustworthy, reproducible pipeline: official source → Bronze → Silver → Gold → Tableau. If a source revises history, the change is traceable and downstream tables rebuild consistently.
+One trustworthy, reproducible pipeline: official source → Bronze → Silver → Gold → static JSON → web dashboard. If a source revises history, the change is traceable and downstream tables rebuild consistently.
 
 ## Stack (Free-Tier-First)
 
 | Layer | Tool | Role |
 | --- | --- | --- |
 | Orchestration | GitHub Actions | Daily availability probes + `workflow_dispatch` backfills |
-| Bronze | Cloudflare R2 | Immutable edition artifacts + manifests + checksums |
+| Bronze | Cloudflare R2 | Immutable raw edition files + manifests + checksums |
 | Processing | Python 3.12 (uv-managed), Pandas, PyArrow, xlrd, openpyxl | Adapters, normalization, Parquet |
-| Gold | Supabase PostgreSQL | Facts, dimensions, views, ops audit tables |
-| Presentation | Tableau Desktop → Tableau Public | Live dev against Gold, extract published |
+| Gold | Parquet in R2 | Facts and views rebuilt from Silver on every Run |
+| Presentation | React + Vite SPA on Vercel | Reads static JSON snapshots from a public R2 prefix; never queries Gold |
 
 Non-goals: Airflow, Spark, Kafka, dbt Cloud, live public database access.
 
@@ -57,7 +57,7 @@ Bronze is append-only and write-once; a re-released edition is a new Publication
 
 ## Data Model
 
-**Silver: `macro_observations`** (Parquet in R2; schema-compatible with a Postgres table, but never copied into one). Business key excludes the checksum; the checksum is lineage. `dimension_code` is the optional second axis (an industry sector, bank group, or credit quality) and is empty for single-series indicators.
+**Silver: `macro_observations`** (Parquet in R2; never copied into a database). Business key excludes the checksum; the checksum is lineage. `dimension_code` is the optional second axis (an industry sector, bank group, or credit quality) and is empty for single-series indicators.
 
 ```
 source_id, source_table, indicator_code,
@@ -72,9 +72,9 @@ Revisions upsert: old row gets `is_current = false, superseded_at = now`, new ro
 
 **Gold**
 
-- Dimensions: `dim_date`, `dim_indicator`, `dim_indicator_regimes` (projected from `indicators.yml`), `dim_geography`
+- Dimensions: `dim_source` (projected from `indicators.yml`) and `dim_events` (curated Seed)
 - Facts: `fact_macro_periodic` — grain `(indicator_key, period_start, frequency, entity_code default 'IDN', sector_code default 'ALL')`; `fact_market_daily` — grain `(indicator_key, obs_date, entity_code)`; USD/IDR now. Facts are current rows only, embedding revision metadata (`first_published_value`, `revision_count`, `last_revised_at`) derived at projection time from Silver, never authoritative
-- Views: `vw_fx_monthly` (trading EOP + monthly average + `is_complete_month` flag), `vw_financial_outlook_monthly` (dashboard core), `vw_financial_outlook_annual` (annual fiscal series + pre-portal `*_ANNUAL` ratios), `vw_dashboard_freshness` (per-source lag + global health in one query), `vw_gold_revisions` (superseded Silver rows)
+- Snapshot views: `fx_monthly` (trading EOP + monthly average + `is_complete_month` flag), `financial_overview_monthly` (dashboard core), `financial_overview_annual` (annual fiscal series + pre-portal `*_ANNUAL` ratios), `dashboard_freshness` (per-source lag + global health in one view), `gold_revisions` (superseded Silver rows)
 
 Mixed frequencies are never equated at join time; the dashboard compares via explicit rules on exposed frequency. Monthly FX aggregates are derived views, never stored rows.
 
@@ -88,21 +88,21 @@ Uniqueness at grain; completeness of required fields and periods; validity of un
 
 ## Orchestration
 
-A lightweight availability probe runs daily at 02:30 UTC on the 15th–28th (the SEKI release window) plus weekdays for BI_JISDOR; against `ops.source_runs` the probe is a near-no-op once the target edition is ingested. Per-source transactions publish Gold; cross-source reconciliation runs non-blocking afterwards. `ops.pipeline_runs` (one row per Run) and `ops.source_runs` (one row per Source Run) are the only ops tables. The seed loader is idempotent on the seed checksum recorded in `ops.source_runs`. Known free-tier constraints handled explicitly: Supabase pause (weekly keep-alive) and GitHub's 60-day schedule auto-disable (failure notifications + periodic activity).
+A lightweight availability probe runs daily at 02:30 UTC on the 15th–28th (the SEKI release window) plus weekdays for BI_JISDOR; against the latest `ops` record the probe is a near-no-op once the target edition is ingested. Every Source Run writes its own JSON record under `ops/runs` in R2, and Gold is rebuilt from Silver after all Sources finish, so a quarantined Source shows its previous value. Cross-source reconciliation runs non-blocking afterwards. Known free-tier constraint handled explicitly: GitHub's 60-day schedule auto-disable (failure notifications + periodic activity).
 
 M1 builds the JISDOR adapter directly against the proven bulk path: a date-range form POST (`TextBoxFrom`/`TextBoxDateTo` + `ButtonExport`) returns a multi-month `.xlsx` (no pagination scraping); export dates arrive as M/D/YYYY strings and the sheet carries three junk title rows. SEKI's monthly V.40 rate remains the reconciliation cross-check.
 
 ## Dashboard Delivery
 
-Develop in Tableau Desktop live against Gold via the Supabase session pooler (IPv4-compatible) with a read-only role. Monthly: refresh extract → republish to Tableau Public. Optional sanitized CSV export to an R2 public bucket for a "download data" link. No credentials or sensitive data in the published workbook.
+`pipeline.gold` rebuilds the views from Silver and `pipeline.export_web` writes one JSON snapshot per dashboard view to the public R2 prefix (`web/data` by default), plus a `manifest.json` recording the Run, `SCHEMA_VERSION`, and per-file checksums so the frontend can show freshness and detect a partial upload. The React + Vite SPA in `web/` deploys to Vercel and reads only those static snapshots; no credentials reach the browser. The pipeline exports the snapshot on every run; to refresh the dashboard without re-running the sources, run `uv run python -m pipeline.export_web`, which rebuilds Gold from Silver and rewrites the Gold Parquet tables.
 
 ## Milestones
 
-1. **Vertical slice (BI)**: `POLICY_RATE` plus raw corridor codes (`BI7DR`, `BI_RATE`, `DF_RATE`, `LF_RATE`), money supply, USD/IDR, SEKI parsing from 2019, pre-2019 history from era sheets (static seed only for verified gaps), migrations, ops tables, first quality gates, first Gold view and freshness published.
+1. **Vertical slice (BI)**: `POLICY_RATE` plus raw corridor codes (`BI7DR`, `BI_RATE`, `DF_RATE`, `LF_RATE`), money supply, USD/IDR, SEKI parsing from 2019, pre-2019 history from era sheets (static seed only for verified gaps), Gold Parquet tables, ops records, first quality gates, first Gold view and freshness published.
 2. **BPS**: inflation and GDP growth via WebAPI (file fallback), with comparison periods and calculation rules defined per frequency.
 3. **OJK**: banking metrics via SJKPublic after a timeboxed download spike (ADR-0007) — credit by sector via `sector_code`, NPL, CAR, LDR, ROA.
 4. **Context and presentation**: regional context (PHL, VNM, MYS, CHN, THA, SGP via SEKI IX tables), curated event dataset (a Seed), Kemenkeu fiscal data via SEKI section IV tables.
 
 ## Deliverables
 
-Versioned raw history in R2; validated Silver Parquet; documented Gold schema + migrations; automated probe + ingestion workflow; quality, drift, and freshness reports; Tableau Public dashboard; source access notes for JISDOR (export POST) and SJKPublic (JSON cascade); reproducible backfill instructions (`workflow_dispatch` with date range); README covering architecture, lineage, deployment.
+Versioned raw history in R2; validated Silver Parquet; documented Gold Parquet schema; automated probe + ingestion workflow; quality, drift, and freshness reports; public web dashboard served from static JSON snapshots; source access notes for JISDOR (export POST) and SJKPublic (JSON cascade); reproducible backfill instructions (`workflow_dispatch` with date range); README covering architecture, lineage, deployment.
