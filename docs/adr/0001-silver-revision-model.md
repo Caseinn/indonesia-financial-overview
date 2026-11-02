@@ -7,4 +7,5 @@ The rejected alternative — checksum in the primary key — made every revision
 ## Consequences
 
 - Revisions are an upsert: flip `is_current` on the old row, insert the new one.
+- A re-publication with unchanged values is not a revision: Silver keeps the first-seen `source_file_sha256` and `retrieved_at`, so the newer file is visible only in Bronze.
 - Revision history lives in Silver (Parquet/R2) only; Gold stays small and fast.

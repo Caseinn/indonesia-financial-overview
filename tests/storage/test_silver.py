@@ -24,6 +24,7 @@ def observation(
     indicator: str = "USDIRR_JISDOR",
     dimension: str = "",
     sha: str = "a" * 64,
+    retrieved_at: datetime = AT,
 ) -> Observation:
     return Observation(
         source_id="BI_JISDOR",
@@ -38,7 +39,7 @@ def observation(
         normalized_value=value,
         normalized_unit="idr_per_usd",
         source_raw_label="Kurs",
-        retrieved_at=AT,
+        retrieved_at=retrieved_at,
         source_file_sha256=sha,
         ingestion_run_id="run-1",
         dimension_code=dimension,
@@ -81,6 +82,23 @@ def test_rerun_with_same_values_is_unchanged() -> None:
     assert result.unchanged == 1
     assert result.revisions == ()
     assert len(read_frame(client)) == 1
+
+
+def test_republished_checksum_with_same_values_is_unchanged() -> None:
+    client = FakeS3()
+    store = SilverStore(client, "bucket")
+
+    store.upsert((observation(sha="a" * 64),))
+    later = datetime(2026, 10, 20, 8, 0, tzinfo=UTC)
+    result = store.upsert((observation(sha="b" * 64, retrieved_at=later),))
+
+    assert result.written == 0
+    assert result.unchanged == 1
+    assert result.revisions == ()
+    frame = read_frame(client)
+    assert len(frame) == 1
+    assert frame.loc[0, "source_file_sha256"] == "a" * 64
+    assert frame.loc[0, "retrieved_at"] == pd.Timestamp(AT)
 
 
 def test_changed_value_supersedes_and_appends() -> None:
