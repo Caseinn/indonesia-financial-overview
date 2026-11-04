@@ -26,7 +26,7 @@ export function SectionCard({
       id={id}
       data-section={id}
       className={cn(
-        "scroll-mt-24 overflow-hidden rounded-lg border border-line bg-paper/90 shadow-[0_1px_0_rgba(20,42,54,0.04)]",
+        "scroll-mt-24 overflow-hidden rounded-lg border border-line bg-background shadow-[0_1px_0_rgba(20,42,54,0.04)]",
         className,
       )}
     >

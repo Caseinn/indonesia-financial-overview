@@ -32,7 +32,7 @@ export function ValueTooltip({ active, payload, label, config, format }: ValueTo
   if (rows.length === 0) return null
 
   return (
-    <div className="min-w-52 rounded-lg border border-line/80 bg-paper px-3 py-2 shadow-[0_10px_24px_rgba(20,42,54,0.12)]">
+    <div className="min-w-52 rounded-lg border border-line/80 bg-background px-3 py-2 shadow-[0_10px_24px_rgba(20,42,54,0.12)]">
       {label !== undefined ? (
         <p className="mb-1.5 font-serif text-[11px] text-muted-ink">{String(label)}</p>
       ) : null}

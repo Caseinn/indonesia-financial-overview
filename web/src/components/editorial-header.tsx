@@ -11,8 +11,8 @@ export function EditorialHeader({ manifest, freshness }: EditorialHeaderProps) {
   const healthy = freshness[0]?.global_healthy ?? false
 
   return (
-    <header className="relative overflow-hidden border-b border-line bg-ivory/60">
-      <JakartaSkyline className="pointer-events-none absolute right-0 top-0 h-full w-[68%] opacity-40 mask-[linear-gradient(to_left,black_48%,transparent)] sm:w-[60%] lg:opacity-95" />
+    <header className="relative overflow-hidden border-b border-line bg-background">
+      <JakartaSkyline className="pointer-events-none absolute right-0 top-0 h-full w-[68%] object-cover object-right opacity-60 mask-[linear-gradient(to_left,black_50%,transparent)] sm:w-[60%] lg:opacity-80" />
       <div className="relative mx-auto max-w-375 px-5 py-10 sm:px-8 lg:px-12 lg:py-16">
         <div className="max-w-3xl">
           <h1 className="font-serif text-[clamp(2.7rem,6.2vw,5.4rem)] leading-[0.92] tracking-[-0.04em] text-navy">

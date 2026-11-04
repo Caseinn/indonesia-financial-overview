@@ -29,7 +29,7 @@ function DashboardLoading() {
   return (
     <div role="status" aria-busy="true">
       <span className="sr-only">Loading dashboard</span>
-      <div className="border-b border-line bg-ivory/60 px-5 py-10 sm:px-8 lg:px-12 lg:py-16">
+      <div className="border-b border-line bg-background px-5 py-10 sm:px-8 lg:px-12 lg:py-16">
         <Skeleton className="h-16 w-[min(560px,82%)]" />
         <Skeleton className="mt-4 h-4 w-[min(420px,70%)]" />
         <Skeleton className="mt-3 h-4 w-[min(340px,55%)]" />

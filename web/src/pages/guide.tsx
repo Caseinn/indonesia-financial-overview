@@ -432,7 +432,7 @@ export function GuidePage() {
 
   return (
     <>
-      <header className="border-b border-line bg-ivory/60">
+      <header className="border-b border-line bg-background">
         <div className="mx-auto max-w-275 px-5 py-10 sm:px-8 lg:px-12 lg:py-16">
           <h1 className="max-w-3xl font-serif text-[clamp(2.5rem,5.5vw,4.2rem)] leading-[0.94] tracking-[-0.04em] text-navy">
             How to Read

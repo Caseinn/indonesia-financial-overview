@@ -48,7 +48,7 @@ export function StatStrip({ monthly }: StatStripProps) {
   ]
 
   return (
-    <div className="grid grid-cols-2 border-y border-line bg-paper/40 sm:grid-cols-4">
+    <div className="grid grid-cols-2 border-y border-line bg-background sm:grid-cols-4">
       {stats.map((stat, index) => (
         <div
           key={stat.label}

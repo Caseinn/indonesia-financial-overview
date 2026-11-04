@@ -136,7 +136,7 @@ export function MobileSidebar({ freshness, manifest }: SidebarProps) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-ivory/95 px-4 py-3 backdrop-blur lg:hidden">
+    <div className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
       <Link to="/" className="font-serif text-lg leading-tight text-navy">
         Indonesia <span className="italic text-teal">Financial Overview</span>
       </Link>
